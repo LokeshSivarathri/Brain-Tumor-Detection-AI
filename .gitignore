@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+model/*.h5
+static/uploads/
+.env
