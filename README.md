@@ -25,3 +25,14 @@ requirements.txt
 templates/
 static/
 model/
+## 🌐 Deployment Note
+
+This project uses a Flask backend and a trained CNN model.
+
+⚠️ GitHub Pages hosts a **static UI demo only**.  
+The full image upload and prediction functionality requires a Python backend.
+
+To run locally:
+```bash
+pip install -r requirements.txt
+python app.py
