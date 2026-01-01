@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Brain Tumor Detection AI</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: radial-gradient(circle at top, #1f3c44, #0f2027);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: #ffffff;
+            padding: 36px 40px;
+            border-radius: 16px;
+            width: 440px;
+            text-align: center;
+            box-shadow: 0 18px 45px rgba(0,0,0,0.25);
+            animation: popIn 0.6s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: 600;
+            color: #0b6b77;
+            margin-bottom: 22px;
+        }
+
+        /* Upload box */
+        .upload-box {
+            border: 2px dashed #0b6b77;
+            border-radius: 12px;
+            padding: 28px 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-sizing: border-box;
+        }
+
+
+        .upload-box:hover {
+            background-color: #f1fbfc;
+            transform: translateY(-2px);
+        }
+
+        .upload-box strong {
+            display: block;
+            font-size: 16px;
+            color: #0b6b77;
+        }
+
+        .upload-box span {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-top: 6px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Button */
+        .btn {
+            margin-top: 22px;
+            padding: 13px 32px;
+            background: linear-gradient(135deg, #0b6b77, #138a94);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 16px rgba(11,107,119,0.35);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 22px rgba(11,107,119,0.45);
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Preview image */
+        img.preview {
+            margin-top: 22px;
+            width: 230px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Result section */
+        .result {
+            margin-top: 20px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .result h2 {
+            margin-bottom: 6px;
+        }
+
+        .confidence {
+            color: #555;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="title">🧠 Brain Tumor Detection</div>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <label class="upload-box">
+            <strong>Upload MRI of Brain</strong>
+            <span id="file-status">Supported formats: JPG, PNG</span>
+            <input type="file" name="image" required onchange="fileUploaded()">
+        </label>
+
+
+        <button type="submit" class="btn">Analyze MRI</button>
+
+    </form>
+
+    {% if image_path %}
+        <img class="preview"
+             src="{{ url_for('static', filename='uploads/' + image_path) }}"
+             alt="Uploaded MRI">
+    {% endif %}
+
+    {% if prediction %}
+        <div class="result">
+            <h2>{{ prediction }}</h2>
+            <div class="confidence">Confidence: {{ confidence }}%</div>
+        </div>
+    {% endif %}
+
+</div>
+<script>
+    function fileUploaded() {
+        const status = document.getElementById("file-status");
+        status.innerHTML = "✅ Image is uploaded";
+        status.style.color = "#0b6b77";
+        status.style.fontWeight = "600";
+    }
+</script>
+
+</body>
+</html>
