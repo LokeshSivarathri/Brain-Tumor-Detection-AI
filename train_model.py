@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import numpy as np
 
@@ -32,6 +33,10 @@ for category in ["yes", "no"]:
     folder_path = os.path.join(DATASET_PATH, category)
     label = 1 if category == "yes" else 0
 
+    if not os.path.exists(folder_path):
+        print(f"⚠️  Warning: Directory '{folder_path}' not found. Please create it and add MRI images.")
+        continue
+
     for image_name in os.listdir(folder_path):
         image_path = os.path.join(folder_path, image_name)
 
@@ -44,6 +49,10 @@ for category in ["yes", "no"]:
         image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
         data.append(image)
         labels.append(label)
+
+if len(data) == 0:
+    print("❌ Error: No images found in the dataset! Please add MRI images to 'dataset/yes' and 'dataset/no'.")
+    sys.exit(1)
 
 # Normalization (/255) → faster & stable learning
 # One-hot encoding → required for softmax output

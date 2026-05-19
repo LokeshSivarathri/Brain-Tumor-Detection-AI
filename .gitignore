@@ -4,3 +4,4 @@ __pycache__/
 model/*.h5
 static/uploads/
 .env
+.DS_Store
