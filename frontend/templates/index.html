@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -26,7 +27,7 @@
 
         body {
             background-color: var(--bg-color);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 15% 50%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
                 radial-gradient(circle at 85% 30%, rgba(0, 180, 216, 0.08) 0%, transparent 50%);
             color: var(--text-main);
@@ -97,7 +98,8 @@
             background: rgba(0, 229, 255, 0.02);
         }
 
-        .upload-area:hover, .upload-area.dragover {
+        .upload-area:hover,
+        .upload-area.dragover {
             border-color: var(--primary);
             background: rgba(0, 229, 255, 0.05);
             transform: translateY(-2px);
@@ -182,7 +184,7 @@
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             color: white;
             border: none;
             width: 30px;
@@ -210,7 +212,7 @@
             overflow: hidden;
             margin-bottom: 1.5rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .result-image-wrapper img {
@@ -287,7 +289,10 @@
         .loader-overlay {
             display: none;
             position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(10, 15, 22, 0.8);
             backdrop-filter: blur(5px);
             border-radius: 24px;
@@ -307,20 +312,55 @@
             margin-bottom: 15px;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes scan { from { top: 0; } to { top: calc(100% - 4px); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
 
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes scan {
+            from {
+                top: 0;
+            }
+
+            to {
+                top: calc(100% - 4px);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <div class="container {% if prediction %}has-result{% endif %}">
-        
+
         <!-- Upload Section -->
         <div class="glass-card" style="position: relative;">
-            
+
             <div class="loader-overlay" id="loader">
                 <div class="spinner"></div>
                 <p>Analyzing Neural Architecture...</p>
@@ -328,7 +368,8 @@
 
             <div class="header">
                 <h1>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <defs>
                             <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" stop-color="#00e5ff" />
@@ -344,9 +385,14 @@
             </div>
 
             <form method="POST" enctype="multipart/form-data" id="upload-form">
-                
+
                 <div class="upload-area" id="drop-zone">
-                    <svg class="upload-icon" fill="none" stroke="#00e5ff" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <svg class="upload-icon" fill="none" stroke="#00e5ff" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                        </path>
+                    </svg>
                     <h3>Drag & Drop MRI Scan</h3>
                     <p>or click to browse files (JPG, PNG)</p>
                     <input type="file" name="image" id="file-input" accept="image/jpeg, image/png" required>
@@ -358,7 +404,13 @@
                 </div>
 
                 <button type="submit" class="btn" id="submit-btn" disabled>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                        </path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
                     Run Neural Analysis
                 </button>
             </form>
@@ -375,9 +427,9 @@
         {% if prediction %}
         <div class="result-section">
             <div class="glass-card">
-                
+
                 <h2 style="font-size: 1.2rem; margin-bottom: 1.2rem; color: #fff;">Analysis Report</h2>
-                
+
                 <div class="result-image-wrapper">
                     <div class="scan-line"></div>
                     <img src="{{ url_for('static', filename='uploads/' + image_path) }}" alt="Scanned MRI">
@@ -385,25 +437,28 @@
 
                 <div class="result-details">
                     {% if "Detected" in prediction and "No" not in prediction %}
-                        <div class="result-badge badge-danger">⚠️ Tumor Detected</div>
-                        {% set color = "var(--danger)" %}
+                    <div class="result-badge badge-danger">⚠️ Tumor Detected</div>
+                    {% set color = "var(--danger)" %}
                     {% else %}
-                        <div class="result-badge badge-success">✅ No Tumor Detected</div>
-                        {% set color = "var(--success)" %}
+                    <div class="result-badge badge-success">✅ No Tumor Detected</div>
+                    {% set color = "var(--success)" %}
                     {% endif %}
-                    
+
                     <div style="text-align: left;">
                         <div class="confidence-text">
                             <span>AI Confidence</span>
                             <span style="color: {{ color }}; font-weight: 600;">{{ confidence }}%</span>
                         </div>
                         <div class="confidence-meter">
-                            <div class="confidence-fill" style="background: {{ color }};" data-width="{{ confidence }}%"></div>
+                            <div class="confidence-fill" style="background: {{ color }};"
+                                data-width="{{ confidence }}%"></div>
                         </div>
                     </div>
                 </div>
-                
-                <a href="/" style="display: block; text-align: center; margin-top: 1.5rem; color: var(--primary); text-decoration: none; font-size: 0.9rem; transition: 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--primary)'">
+
+                <a href="/"
+                    style="display: block; text-align: center; margin-top: 1.5rem; color: var(--primary); text-decoration: none; font-size: 0.9rem; transition: 0.3s;"
+                    onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--primary)'">
                     ← Analyze another scan
                 </a>
 
@@ -457,14 +512,14 @@
             dropZone.addEventListener('drop', (e) => {
                 const dt = e.dataTransfer;
                 const files = dt.files;
-                if(files.length) {
+                if (files.length) {
                     fileInput.files = files;
                     handleFiles(files[0]);
                 }
             });
 
-            fileInput.addEventListener('change', function() {
-                if(this.files.length) {
+            fileInput.addEventListener('change', function () {
+                if (this.files.length) {
                     handleFiles(this.files[0]);
                 }
             });
@@ -497,4 +552,5 @@
         });
     </script>
 </body>
+
 </html>
