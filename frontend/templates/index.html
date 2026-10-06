@@ -1,556 +1,732 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroScan AI | Brain Tumor Detection</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #00e5ff;
-            --primary-dark: #00b4d8;
-            --bg-color: #0a0f16;
-            --card-bg: rgba(16, 25, 36, 0.7);
-            --text-main: #ffffff;
-            --text-muted: #8b9bb4;
-            --success: #00e676;
-            --danger: #ff1744;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            background-image:
-                radial-gradient(circle at 15% 50%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(0, 180, 216, 0.08) 0%, transparent 50%);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        @media (min-width: 768px) {
-            .container.has-result {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .glass-card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #fff, #a5b4cb);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .header p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-        }
-
-        .upload-area {
-            border: 2px dashed rgba(0, 229, 255, 0.3);
-            border-radius: 16px;
-            padding: 3rem 2rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            background: rgba(0, 229, 255, 0.02);
-        }
-
-        .upload-area:hover,
-        .upload-area.dragover {
-            border-color: var(--primary);
-            background: rgba(0, 229, 255, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .upload-icon {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.8;
-        }
-
-        .upload-area h3 {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .upload-area p {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-        }
-
-        input[type="file"] {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: #000;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(0, 229, 255, 0.2);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 25px rgba(0, 229, 255, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #333;
-            color: #888;
-            box-shadow: none;
-        }
-
-        /* Preview Area */
-        #preview-container {
-            display: none;
-            margin-top: 1.5rem;
-            position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        #preview-image {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        #remove-preview {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            border: none;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        /* Result Section */
-        .result-section {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            animation: slideInRight 0.6s ease-out;
-        }
-
-        .result-image-wrapper {
-            position: relative;
-            border-radius: 16px;
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .result-image-wrapper img {
-            width: 100%;
-            display: block;
-        }
-
-        .scan-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: var(--primary);
-            box-shadow: 0 0 15px var(--primary), 0 0 30px var(--primary);
-            animation: scan 2s infinite ease-in-out alternate;
-            opacity: 0.7;
-        }
-
-        .result-details {
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 1.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: center;
-        }
-
-        .result-badge {
-            display: inline-block;
-            padding: 0.5rem 1.2rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .badge-danger {
-            background: rgba(255, 23, 68, 0.15);
-            color: var(--danger);
-            border: 1px solid rgba(255, 23, 68, 0.3);
-        }
-
-        .badge-success {
-            background: rgba(0, 230, 118, 0.15);
-            color: var(--success);
-            border: 1px solid rgba(0, 230, 118, 0.3);
-        }
-
-        .confidence-meter {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 10px;
-            position: relative;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 1.5s cubic-bezier(0.1, 0.8, 0.2, 1);
-        }
-
-        .confidence-text {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        /* Loading Overlay */
-        .loader-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(10, 15, 22, 0.8);
-            backdrop-filter: blur(5px);
-            border-radius: 24px;
-            z-index: 10;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(0, 229, 255, 0.1);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes scan {
-            from {
-                top: 0;
-            }
-
-            to {
-                top: calc(100% - 4px);
-            }
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
+    <title>NeuroScan AI — Brain Tumor Detection & Diagnostic Suite</title>
+    <meta name="description" content="Deep Learning Diagnostic Suite for automated detection and risk classification of brain tumors from MRI scans using Convolutional Neural Networks (CNN).">
+    
+    <!-- Google Fonts: Outfit & Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
 
-    <div class="container {% if prediction %}has-result{% endif %}">
-
-        <!-- Upload Section -->
-        <div class="glass-card" style="position: relative;">
-
-            <div class="loader-overlay" id="loader">
-                <div class="spinner"></div>
-                <p>Analyzing Neural Architecture...</p>
-            </div>
-
-            <div class="header">
-                <h1>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#gradient)" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <defs>
-                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#00e5ff" />
-                                <stop offset="100%" stop-color="#00b4d8" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M12 2a8 8 0 0 0-8 8c0 1.5.5 3 1.2 4.2L3 20l4.8-1.2A8 8 0 1 0 12 2z"></path>
-                        <path d="M12 6v6l4 2"></path>
+    <!-- Header Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <a href="/" class="brand-wrapper" id="brand-link">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"/>
+                        <path d="M9 22h6"/>
+                        <path d="M10 12h4"/>
+                        <path d="M12 10v4"/>
                     </svg>
-                    NeuroScan AI
-                </h1>
-                <p>Deep Learning MRI Analysis</p>
-            </div>
-
-            <form method="POST" enctype="multipart/form-data" id="upload-form">
-
-                <div class="upload-area" id="drop-zone">
-                    <svg class="upload-icon" fill="none" stroke="#00e5ff" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                        </path>
-                    </svg>
-                    <h3>Drag & Drop MRI Scan</h3>
-                    <p>or click to browse files (JPG, PNG)</p>
-                    <input type="file" name="image" id="file-input" accept="image/jpeg, image/png" required>
                 </div>
-
-                <div id="preview-container">
-                    <button type="button" id="remove-preview">✕</button>
-                    <img id="preview-image" src="" alt="Preview">
+                <div class="brand-info">
+                    <h1>NeuroScan AI</h1>
+                    <span class="tagline">Deep Learning Neuro-Radiology Suite</span>
                 </div>
+            </a>
 
-                <button type="submit" class="btn" id="submit-btn" disabled>
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
-                        </path>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                        </path>
-                    </svg>
-                    Run Neural Analysis
-                </button>
-            </form>
-
-            {% if not prediction %}
-            <div style="margin-top: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
-                <p>This AI model is trained on medical datasets to detect brain tumors with high accuracy.</p>
-                <p style="margin-top: 0.5rem; opacity: 0.7;">⚠️ For research & demonstration purposes only.</p>
+            <div class="header-badges">
+                <div class="status-pill" id="engine-status">
+                    <span class="pulse-dot"></span>
+                    <span>CNN Engine Ready</span>
+                </div>
+                <div class="model-pill" title="Model input shape & framework">
+                    <span>224×224 • Keras CNN</span>
+                </div>
             </div>
-            {% endif %}
         </div>
+    </header>
 
-        <!-- Result Section -->
-        {% if prediction %}
-        <div class="result-section">
-            <div class="glass-card">
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
 
-                <h2 style="font-size: 1.2rem; margin-bottom: 1.2rem; color: #fff;">Analysis Report</h2>
+        <!-- Hero Header -->
+        <section class="hero-section">
+            <div class="hero-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span>Instant Neural MRI Screening</span>
+            </div>
+            <h2 class="hero-title">Automated Brain Tumor Detection</h2>
+            <p class="hero-subtitle">
+                Analyze cranial MRI scans in real time with high-precision convolutional feature mapping, lesion classification, and confidence scoring.
+            </p>
+        </section>
 
-                <div class="result-image-wrapper">
-                    <div class="scan-line"></div>
-                    <img src="{{ url_for('static', filename='uploads/' + image_path) }}" alt="Scanned MRI">
+        <!-- Flash / Error Banner if server returned an error -->
+        {% if error_message %}
+        <div class="alert-banner" role="alert" id="server-alert">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ error_message }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Two Column Diagnostic Workspace -->
+        <section class="diagnostic-grid">
+
+            <!-- LEFT COLUMN: MRI Upload & Scan Controller -->
+            <article class="card-panel" id="scan-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-title-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                        </span>
+                        <h3 class="panel-title">MRI Scan Input</h3>
+                    </div>
+                    <span class="panel-badge">DICOM / JPG / PNG</span>
                 </div>
 
-                <div class="result-details">
-                    {% if "Detected" in prediction and "No" not in prediction %}
-                    <div class="result-badge badge-danger">⚠️ Tumor Detected</div>
-                    {% set color = "var(--danger)" %}
-                    {% else %}
-                    <div class="result-badge badge-success">✅ No Tumor Detected</div>
-                    {% set color = "var(--success)" %}
-                    {% endif %}
+                <!-- Live Scan Viewport & Preview -->
+                <div class="scan-viewport" id="scan-viewport">
+                    <!-- Scanner Laser Sweep Beam -->
+                    <div class="scanner-laser" id="scanner-laser"></div>
 
-                    <div style="text-align: left;">
-                        <div class="confidence-text">
-                            <span>AI Confidence</span>
-                            <span style="color: {{ color }}; font-weight: 600;">{{ confidence }}%</span>
+                    <!-- Medical HUD Reticle Overlays -->
+                    <div class="scan-hud">
+                        <div class="hud-corner hud-tl"></div>
+                        <div class="hud-corner hud-tr"></div>
+                        <div class="hud-corner hud-bl"></div>
+                        <div class="hud-corner hud-br"></div>
+                        <div class="hud-info-badge" id="hud-status">STANDBY: NO SCAN LOADED</div>
+                    </div>
+                    <div class="hud-grid-lines" id="hud-grid"></div>
+
+                    <!-- Active Image Preview -->
+                    <img id="image-preview" 
+                         class="preview-img" 
+                         src="{{ image_url if image_url else '' }}" 
+                         alt="MRI Scan Slice"
+                         style="{{ 'display: block;' if image_url else 'display: none;' }}">
+
+                    <!-- Drag & Drop Overlay when no image is loaded -->
+                    <div class="dropzone-container" id="dropzone" style="{{ 'display: none;' if image_url else 'display: block;' }}">
+                        <input type="file" id="file-input" name="image" accept=".png, .jpg, .jpeg, .webp" class="file-input-hidden">
+                        
+                        <div class="dropzone-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
                         </div>
-                        <div class="confidence-meter">
-                            <div class="confidence-fill" style="background: {{ color }};"
-                                data-width="{{ confidence }}%"></div>
+                        <div class="dropzone-title">Upload MRI Scan Slice</div>
+                        <div class="dropzone-sub">Drag & drop your file here, or click to browse</div>
+                        <div class="format-tags">
+                            <span class="format-tag">JPG</span>
+                            <span class="format-tag">PNG</span>
+                            <span class="format-tag">JPEG</span>
+                            <span class="format-tag">WEBP</span>
                         </div>
                     </div>
                 </div>
 
-                <a href="/"
-                    style="display: block; text-align: center; margin-top: 1.5rem; color: var(--primary); text-decoration: none; font-size: 0.9rem; transition: 0.3s;"
-                    onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--primary)'">
-                    ← Analyze another scan
-                </a>
+                <!-- Analysis Progress State Bar -->
+                <div class="analysis-progress-card" id="progress-card">
+                    <div class="progress-header">
+                        <span class="progress-text" id="progress-step-text">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="spin-icon">
+                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                            </svg>
+                            Calibrating neural tensors...
+                        </span>
+                        <span class="progress-text" id="progress-pct" style="font-family: monospace;">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                    </div>
+                </div>
 
+                <!-- Action Controls -->
+                <form id="upload-form" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="sample_id" id="hidden-sample-id" value="">
+                    
+                    <div class="btn-group">
+                        <button type="button" class="btn-primary" id="analyze-btn" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+                            </svg>
+                            <span id="btn-text">Run Diagnostic Analysis</span>
+                        </button>
+
+                        <button type="button" class="btn-secondary" id="toggle-grid-btn" title="Toggle Reticle / Grid Overlay">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            <span>Grid HUD</span>
+                        </button>
+
+                        <button type="button" class="btn-secondary" id="clear-btn" style="{{ 'display: inline-flex;' if image_url else 'display: none;' }}" title="Reset scan">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Interactive Quick-Test MRI Samples -->
+                <div class="samples-section">
+                    <div class="samples-header">
+                        <span class="samples-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                            </svg>
+                            Quick Test Scans (Click to Test)
+                        </span>
+                        <span style="font-size: 11px; color: var(--text-muted);">From Dataset</span>
+                    </div>
+
+                    <div class="samples-grid">
+                        {% for sample in samples %}
+                        <div class="sample-card" data-sample-id="{{ sample.id }}" data-img-url="{{ sample.image_url }}" title="{{ sample.description }}">
+                            <img src="{{ sample.image_url }}" alt="{{ sample.title }}" class="sample-thumb">
+                            <span class="sample-label">{{ sample.title }}</span>
+                            <span class="sample-pill {{ 'tumor' if sample.type == 'tumor' else 'normal' }}">
+                                {{ 'Tumor' if sample.type == 'tumor' else 'Healthy' }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </article>
+
+            <!-- RIGHT COLUMN: Real-Time Diagnostic Results & Analytics -->
+            <article class="card-panel" id="results-panel">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <span class="panel-title-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                            </svg>
+                        </span>
+                        <h3 class="panel-title">Diagnostic Findings</h3>
+                    </div>
+                    <span class="panel-badge" id="inference-tag">
+                        {{ 'Evaluated' if prediction_data else 'Awaiting Scan' }}
+                    </span>
+                </div>
+
+                <!-- Empty State Prompt -->
+                <div class="results-empty-state" id="empty-state" style="{{ 'display: none;' if prediction_data else 'display: flex;' }}">
+                    <div class="empty-state-graphic">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <h4 class="empty-state-title">Ready for Analysis</h4>
+                    <p class="empty-state-text">
+                        Upload a brain MRI slice or choose one of the quick sample scans on the left to view the neural classification verdict and probability analysis.
+                    </p>
+                </div>
+
+                <!-- Active Diagnosis Container -->
+                <div id="results-content" style="{{ 'display: block;' if prediction_data else 'display: none;' }}">
+                    
+                    <!-- Top Status Banner -->
+                    <div class="diagnosis-banner {{ 'tumor' if prediction_data and prediction_data.is_tumor else 'normal' }}" id="diagnosis-banner">
+                        <div class="diagnosis-icon-wrap" id="diagnosis-icon">
+                            {% if prediction_data and prediction_data.is_tumor %}
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                            </svg>
+                            {% else %}
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                            {% endif %}
+                        </div>
+                        <div class="diagnosis-text-group">
+                            <span class="diagnosis-badge" id="diagnosis-badge">
+                                {{ 'PATHOLOGY DETECTED' if prediction_data and prediction_data.is_tumor else 'SCREENING CLEAR' }}
+                            </span>
+                            <div class="diagnosis-verdict" id="diagnosis-verdict">
+                                {{ prediction_data.prediction if prediction_data else '' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Confidence Gauge Card -->
+                    <div class="confidence-card">
+                        <div class="confidence-header">
+                            <span class="confidence-label">Model Confidence</span>
+                            <span class="confidence-value" id="confidence-val">
+                                {{ prediction_data.confidence if prediction_data else '0' }}%
+                            </span>
+                        </div>
+                        <div class="confidence-bar-wrapper">
+                            <div class="confidence-bar-fill {{ 'tumor' if prediction_data and prediction_data.is_tumor else 'normal' }}" 
+                                 id="confidence-bar" 
+                                 style="width: {{ prediction_data.confidence if prediction_data else '0' }}%;"></div>
+                        </div>
+
+                        <!-- Dual Probability Comparison -->
+                        <div class="prob-breakdown">
+                            <div class="prob-item">
+                                <div class="prob-name">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#f43f5e;"></span>
+                                    <span>Tumor Probability</span>
+                                </div>
+                                <div class="prob-pct" id="tumor-prob-val">
+                                    {{ prediction_data.tumor_prob if prediction_data else '0' }}%
+                                </div>
+                            </div>
+                            <div class="prob-item">
+                                <div class="prob-name">
+                                    <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981;"></span>
+                                    <span>Healthy Baseline</span>
+                                </div>
+                                <div class="prob-pct" id="normal-prob-val">
+                                    {{ prediction_data.normal_prob if prediction_data else '0' }}%
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Clinical Recommendation Summary Box -->
+                    <div class="recommendation-box">
+                        <div class="rec-title">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+                            </svg>
+                            <span>Clinical Interpretation & Recommendation</span>
+                        </div>
+                        <p class="rec-content" id="rec-text">
+                            {{ prediction_data.recommendation if prediction_data else '' }}
+                        </p>
+                    </div>
+
+                    <!-- Telemetry Matrix -->
+                    <div class="metadata-matrix">
+                        <div class="meta-chip">
+                            <div class="meta-key">Inference Latency</div>
+                            <div class="meta-val" id="meta-latency">
+                                {{ prediction_data.latency_ms if prediction_data else '--' }} ms
+                            </div>
+                        </div>
+                        <div class="meta-chip">
+                            <div class="meta-key">Input Resolution</div>
+                            <div class="meta-val" id="meta-dimensions">
+                                {{ prediction_data.dimensions if prediction_data else '224 × 224 px' }}
+                            </div>
+                        </div>
+                        <div class="meta-chip">
+                            <div class="meta-key">Severity Level</div>
+                            <div class="meta-val" id="meta-severity">
+                                {{ prediction_data.severity if prediction_data else '--' }}
+                            </div>
+                        </div>
+                        <div class="meta-chip">
+                            <div class="meta-key">Evaluation Time</div>
+                            <div class="meta-val" id="meta-timestamp">
+                                {{ prediction_data.timestamp if prediction_data else '--' }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Utility Actions: Print & Rescan -->
+                    <div class="btn-group" style="margin-top: 10px;">
+                        <button type="button" class="btn-secondary" id="print-btn" style="flex: 1;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 6 2 18 2 18 9"/>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                                <rect x="6" y="14" width="12" height="8"/>
+                            </svg>
+                            <span>Print Report</span>
+                        </button>
+
+                        <button type="button" class="btn-secondary" id="rescan-btn" style="flex: 1;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                            </svg>
+                            <span>New Scan</span>
+                        </button>
+                    </div>
+
+                </div>
+            </article>
+
+        </section>
+
+        <!-- Information & Clinical Guidance Section -->
+        <section class="info-section">
+            <div class="info-cards-grid">
+                <div class="info-card">
+                    <div class="info-icon-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"/>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        </svg>
+                    </div>
+                    <h4 class="info-card-title">CNN Architecture</h4>
+                    <p class="info-card-text">
+                        Sequential 3-block convolutional neural network trained on normalized 224×224 MRI slices with ReLU activation, max pooling, dropout regularization, and softmax classification.
+                    </p>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+                        </svg>
+                    </div>
+                    <h4 class="info-card-title">Supported Modalities</h4>
+                    <p class="info-card-text">
+                        Optimized for T1-weighted, T2-weighted, and FLAIR axial brain MRI sequences. Detects localized hyperintensities, gliomas, meningiomas, and pituitary tumors.
+                    </p>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-icon-badge">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <h4 class="info-card-title">Clinical Diagnostic Safety</h4>
+                    <p class="info-card-text">
+                        Intended for assistive screening and research workflows. All predictions should be correlated with comprehensive multi-planar clinical radiology workups.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-inner">
+            <div class="disclaimer-pill">
+                <strong>Medical Notice:</strong> NeuroScan AI is an assistive deep learning model designed for diagnostic triage support and educational evaluation. Definitive diagnosis requires examination by a certified neuro-radiologist.
+            </div>
+            <div>
+                <span>&copy; 2026 NeuroScan AI Suite • Powered by TensorFlow & Flask</span>
             </div>
         </div>
-        {% endif %}
+    </footer>
 
-    </div>
-
+    <!-- Interactive Client-side Script -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const dropZone = document.getElementById('drop-zone');
+            const dropzone = document.getElementById('dropzone');
             const fileInput = document.getElementById('file-input');
-            const previewContainer = document.getElementById('preview-container');
-            const previewImage = document.getElementById('preview-image');
-            const removePreviewBtn = document.getElementById('remove-preview');
-            const submitBtn = document.getElementById('submit-btn');
-            const uploadForm = document.getElementById('upload-form');
-            const loader = document.getElementById('loader');
-            const fills = document.querySelectorAll('.confidence-fill');
+            const imagePreview = document.getElementById('image-preview');
+            const scanViewport = document.getElementById('scan-viewport');
+            const hudStatus = document.getElementById('hud-status');
+            const hudGrid = document.getElementById('hud-grid');
+            const analyzeBtn = document.getElementById('analyze-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const toggleGridBtn = document.getElementById('toggle-grid-btn');
+            const printBtn = document.getElementById('print-btn');
+            const rescanBtn = document.getElementById('rescan-btn');
+            const hiddenSampleId = document.getElementById('hidden-sample-id');
+            const sampleCards = document.querySelectorAll('.sample-card');
 
-            // Animate confidence bars
-            setTimeout(() => {
-                fills.forEach(fill => {
-                    fill.style.width = fill.getAttribute('data-width');
-                });
-            }, 300);
+            const progressCard = document.getElementById('progress-card');
+            const progressStepText = document.getElementById('progress-step-text');
+            const progressPct = document.getElementById('progress-pct');
+            const progressBarFill = document.getElementById('progress-bar-fill');
 
-            // Drag and drop events
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-            });
+            const emptyState = document.getElementById('empty-state');
+            const resultsContent = document.getElementById('results-content');
+            const inferenceTag = document.getElementById('inference-tag');
 
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
+            const diagnosisBanner = document.getElementById('diagnosis-banner');
+            const diagnosisIcon = document.getElementById('diagnosis-icon');
+            const diagnosisBadge = document.getElementById('diagnosis-badge');
+            const diagnosisVerdict = document.getElementById('diagnosis-verdict');
+            const confidenceVal = document.getElementById('confidence-val');
+            const confidenceBar = document.getElementById('confidence-bar');
+            const tumorProbVal = document.getElementById('tumor-prob-val');
+            const normalProbVal = document.getElementById('normal-prob-val');
+            const recText = document.getElementById('rec-text');
+            const metaLatency = document.getElementById('meta-latency');
+            const metaDimensions = document.getElementById('meta-dimensions');
+            const metaSeverity = document.getElementById('meta-severity');
+            const metaTimestamp = document.getElementById('meta-timestamp');
+
+            let currentFile = null;
+            let currentSampleId = null;
+
+            // Check if initial image is already rendered by Flask template
+            if (imagePreview.src && imagePreview.style.display !== 'none') {
+                analyzeBtn.disabled = false;
+                clearBtn.style.display = 'inline-flex';
+                hudStatus.textContent = 'IMAGE LOADED: READY';
             }
 
+            // Drag and drop event listeners
             ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    dropZone.classList.add('dragover');
-                }, false);
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.add('dragover');
+                });
             });
 
             ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    dropZone.classList.remove('dragover');
-                }, false);
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.classList.remove('dragover');
+                });
             });
 
-            dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length) {
-                    fileInput.files = files;
-                    handleFiles(files[0]);
+            dropzone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    handleFileSelection(files[0]);
                 }
             });
 
-            fileInput.addEventListener('change', function () {
-                if (this.files.length) {
-                    handleFiles(this.files[0]);
+            fileInput.addEventListener('change', (e) => {
+                if (fileInput.files && fileInput.files.length > 0) {
+                    handleFileSelection(fileInput.files[0]);
                 }
             });
 
-            removePreviewBtn.addEventListener('click', () => {
+            function handleFileSelection(file) {
+                if (!file.type.match('image.*')) {
+                    alert('Please select a valid image file (JPG, PNG, WEBP).');
+                    return;
+                }
+
+                currentFile = file;
+                currentSampleId = null;
+                hiddenSampleId.value = '';
+
+                // Deselect any sample cards
+                sampleCards.forEach(c => c.classList.remove('active'));
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    dropzone.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                    clearBtn.style.display = 'inline-flex';
+                    hudStatus.textContent = `LOADED: ${file.name.slice(0, 18)}`;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // Quick sample card click listener
+            sampleCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const sampleId = card.getAttribute('data-sample-id');
+                    const imgUrl = card.getAttribute('data-img-url');
+
+                    sampleCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+
+                    currentSampleId = sampleId;
+                    currentFile = null;
+                    hiddenSampleId.value = sampleId;
+
+                    imagePreview.src = imgUrl;
+                    imagePreview.style.display = 'block';
+                    dropzone.style.display = 'none';
+                    analyzeBtn.disabled = false;
+                    clearBtn.style.display = 'inline-flex';
+                    hudStatus.textContent = `SAMPLE: ${sampleId}`;
+
+                    // Automatically trigger quick analysis on sample click
+                    startScanAnalysis();
+                });
+            });
+
+            // Toggle grid / reticle
+            toggleGridBtn.addEventListener('click', () => {
+                scanViewport.classList.toggle('show-grid');
+                toggleGridBtn.classList.toggle('active');
+            });
+
+            // Reset action
+            clearBtn.addEventListener('click', resetScanner);
+            if (rescanBtn) rescanBtn.addEventListener('click', resetScanner);
+
+            function resetScanner() {
+                currentFile = null;
+                currentSampleId = null;
                 fileInput.value = '';
-                previewContainer.style.display = 'none';
-                dropZone.style.display = 'block';
-                submitBtn.disabled = true;
+                hiddenSampleId.value = '';
+                imagePreview.src = '';
+                imagePreview.style.display = 'none';
+                dropzone.style.display = 'block';
+                analyzeBtn.disabled = true;
+                clearBtn.style.display = 'none';
+                hudStatus.textContent = 'STANDBY: NO SCAN LOADED';
+                emptyState.style.display = 'flex';
+                resultsContent.style.display = 'none';
+                inferenceTag.textContent = 'Awaiting Scan';
+                sampleCards.forEach(c => c.classList.remove('active'));
+            }
+
+            // Print report action
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    window.print();
+                });
+            }
+
+            // Analyze button click
+            analyzeBtn.addEventListener('click', () => {
+                if (currentFile || currentSampleId) {
+                    startScanAnalysis();
+                }
             });
 
-            function handleFiles(file) {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        previewImage.src = e.target.result;
-                        previewContainer.style.display = 'block';
-                        dropZone.style.display = 'none';
-                        submitBtn.disabled = false;
+            // High-Tech Scanner Animation and Async Inference Flow
+            async function startScanAnalysis() {
+                // UI transition to analyzing state
+                analyzeBtn.disabled = true;
+                scanViewport.classList.add('analyzing');
+                progressCard.classList.add('active');
+                hudStatus.textContent = 'DIAGNOSTIC SCAN IN PROGRESS...';
+
+                // Multi-stage realistic progress indicator
+                let progress = 0;
+                progressBarFill.style.width = '0%';
+                progressPct.textContent = '0%';
+
+                const progressInterval = setInterval(() => {
+                    if (progress < 85) {
+                        progress += Math.floor(Math.random() * 15) + 10;
+                        if (progress > 85) progress = 85;
+                        progressBarFill.style.width = `${progress}%`;
+                        progressPct.textContent = `${progress}%`;
+
+                        if (progress < 30) {
+                            progressStepText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                Calibrating neural voxel tensors...
+                            `;
+                        } else if (progress < 60) {
+                            progressStepText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                Executing 3-layer Conv2D feature filters...
+                            `;
+                        } else {
+                            progressStepText.innerHTML = `
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                                </svg>
+                                Computing categorical softmax distribution...
+                            `;
+                        }
                     }
-                    reader.readAsDataURL(file);
+                }, 120);
+
+                try {
+                    const formData = new FormData();
+                    if (currentFile) {
+                        formData.append('image', currentFile);
+                    } else if (currentSampleId) {
+                        formData.append('sample_id', currentSampleId);
+                    }
+
+                    const response = await fetch('/api/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    clearInterval(progressInterval);
+                    progressBarFill.style.width = '100%';
+                    progressPct.textContent = '100%';
+                    progressStepText.textContent = 'Analysis Completed!';
+
+                    setTimeout(() => {
+                        scanViewport.classList.remove('analyzing');
+                        progressCard.classList.remove('active');
+                        analyzeBtn.disabled = false;
+
+                        if (result.success) {
+                            renderPredictionResults(result.data);
+                        } else {
+                            alert(result.error || 'Diagnostic evaluation failed.');
+                            hudStatus.textContent = 'EVALUATION ERROR';
+                        }
+                    }, 400);
+
+                } catch (err) {
+                    clearInterval(progressInterval);
+                    scanViewport.classList.remove('analyzing');
+                    progressCard.classList.remove('active');
+                    analyzeBtn.disabled = false;
+                    console.error('Fetch error:', err);
+                    alert('Network error during prediction request. Please try again.');
+                    hudStatus.textContent = 'NETWORK FAULT';
                 }
             }
 
-            uploadForm.addEventListener('submit', () => {
-                loader.style.display = 'flex';
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = 'Processing...';
-            });
+            function renderPredictionResults(data) {
+                emptyState.style.display = 'none';
+                resultsContent.style.display = 'block';
+                inferenceTag.textContent = 'Evaluated';
+                hudStatus.textContent = `VERDICT: ${data.prediction.toUpperCase()}`;
+
+                // Update Diagnosis Banner
+                diagnosisBanner.className = `diagnosis-banner ${data.is_tumor ? 'tumor' : 'normal'}`;
+                diagnosisBadge.textContent = data.is_tumor ? 'PATHOLOGY DETECTED' : 'SCREENING CLEAR';
+                diagnosisBadge.style.color = data.is_tumor ? '#fb7185' : '#34d399';
+                diagnosisVerdict.textContent = data.prediction;
+
+                diagnosisIcon.innerHTML = data.is_tumor ? `
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                ` : `
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                `;
+
+                // Update Confidence
+                confidenceVal.textContent = `${data.confidence}%`;
+                confidenceBar.className = `confidence-bar-fill ${data.is_tumor ? 'tumor' : 'normal'}`;
+                confidenceBar.style.width = `${data.confidence}%`;
+
+                // Probabilities
+                tumorProbVal.textContent = `${data.tumor_prob}%`;
+                normalProbVal.textContent = `${data.normal_prob}%`;
+
+                // Clinical text & metadata
+                recText.textContent = data.recommendation;
+                metaLatency.textContent = `${data.latency_ms} ms`;
+                metaDimensions.textContent = data.dimensions || '224 × 224 px';
+                metaSeverity.textContent = data.severity;
+                metaTimestamp.textContent = data.timestamp || new Date().toLocaleTimeString();
+
+                // If image URL changed from API response
+                if (data.image_url) {
+                    imagePreview.src = data.image_url;
+                }
+            }
         });
     </script>
-</body>
 
+</body>
 </html>

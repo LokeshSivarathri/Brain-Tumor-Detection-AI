@@ -2,113 +2,116 @@ import os
 import sys
 import cv2
 import numpy as np
-
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
-from keras.utils import to_categorical
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
+from tensorflow.keras.utils import to_categorical
 
-# Resolve paths dynamically relative to this file's location to prevent execution directory mismatches.
-# File is located at: ml_pipeline/train_model.py
-# Root folder is 1 level up from ml_pipeline/
+# Resolve paths dynamically relative to project root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET_PATH = os.path.join(BASE_DIR, "dataset")
 MODEL_DIR = os.path.join(BASE_DIR, "model")
+MODEL_PATH = os.path.join(MODEL_DIR, "brain_tumor_cnn.h5")
 
 IMG_SIZE = 224
 
-# data -> images
-# labels -> tumor (1) / no tumor (0)
-data = []
-labels = []
+def load_and_preprocess_data():
+    data = []
+    labels = []
 
-# Reads all MRI images
-# Resizes them to a fixed size
-# Assigns:
-# yes -> 1
-# no -> 0
-for category in ["yes", "no"]:
-    folder_path = os.path.join(DATASET_PATH, category)
-    label = 1 if category == "yes" else 0
+    for category in ["yes", "no"]:
+        folder_path = os.path.join(DATASET_PATH, category)
+        label = 1 if category == "yes" else 0
 
-    if not os.path.exists(folder_path):
-        print(f"⚠️  Warning: Directory '{folder_path}' not found. Please create it and add MRI images.")
-        continue
-
-    for image_name in os.listdir(folder_path):
-        image_path = os.path.join(folder_path, image_name)
-        image = cv2.imread(image_path)
-
-        # Skip unreadable images
-        if image is None:
+        if not os.path.exists(folder_path):
+            print(f"⚠️ Warning: Folder '{folder_path}' not found. Please ensure dataset exists.")
             continue
 
-        image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
-        data.append(image)
-        labels.append(label)
+        valid_count = 0
+        for image_name in os.listdir(folder_path):
+            image_path = os.path.join(folder_path, image_name)
+            image = cv2.imread(image_path)
 
-if len(data) == 0:
-    print(f"❌ Error: No images found in the dataset! Please add MRI images to '{os.path.join('dataset', 'yes')}' and '{os.path.join('dataset', 'no')}'.")
-    sys.exit(1)
+            if image is None:
+                continue
 
-# Normalization (/255) -> faster & stable learning
-# One-hot encoding -> required for softmax output
-data = np.array(data) / 255.0
-labels = to_categorical(labels, 2)
+            image = cv2.resize(image, (IMG_SIZE, IMG_SIZE))
+            data.append(image)
+            labels.append(label)
+            valid_count += 1
 
-# 80% training data
-# 20% testing data
-# Prevents overfitting
-X_train, X_test, y_train, y_test = train_test_split(
-    data,
-    labels,
-    test_size=0.2,
-    random_state=42,
-    shuffle=True
-)
+        print(f"Loaded {valid_count} images from category '{category}'.")
 
-# Learns edges -> shapes -> tumor regions
-# Dropout avoids memorization
-# Softmax outputs probabilities
-model = Sequential([
-    Conv2D(32, (3, 3), activation="relu", input_shape=(224, 224, 3)),
-    MaxPooling2D(2, 2),
+    if len(data) == 0:
+        raise ValueError(f"No valid images found in dataset directory '{DATASET_PATH}'.")
 
-    Conv2D(64, (3, 3), activation="relu"),
-    MaxPooling2D(2, 2),
+    data = np.array(data, dtype="float32") / 255.0
+    labels = to_categorical(np.array(labels), num_classes=2)
 
-    Conv2D(128, (3, 3), activation="relu"),
-    MaxPooling2D(2, 2),
+    return data, labels
 
-    Flatten(),
-    Dense(128, activation="relu"),
-    Dropout(0.5),
-    Dense(2, activation="softmax")
-])
+def build_cnn_model():
+    model = Sequential([
+        Conv2D(32, (3, 3), activation="relu", input_shape=(IMG_SIZE, IMG_SIZE, 3)),
+        MaxPooling2D(2, 2),
 
-# Adam -> best default optimizer
-# Categorical loss -> 2-class classification
-model.compile(
-    optimizer="adam",
-    loss="categorical_crossentropy",
-    metrics=["accuracy"]
-)
+        Conv2D(64, (3, 3), activation="relu"),
+        MaxPooling2D(2, 2),
 
-# Shows model layers
-model.summary()
+        Conv2D(128, (3, 3), activation="relu"),
+        MaxPooling2D(2, 2),
 
-# Trains CNN for 10 iterations
-# Validation checks real performance
-model.fit(
-    X_train,
-    y_train,
-    epochs=10,
-    validation_data=(X_test, y_test)
-)
+        Flatten(),
+        Dense(128, activation="relu"),
+        Dropout(0.5),
+        Dense(2, activation="softmax")
+    ])
 
-# Saves trained model inside root model folder
-os.makedirs(MODEL_DIR, exist_ok=True)
-model_save_path = os.path.join(MODEL_DIR, "brain_tumor_cnn.h5")
-model.save(model_save_path)
+    model.compile(
+        optimizer="adam",
+        loss="categorical_crossentropy",
+        metrics=["accuracy"]
+    )
+    return model
 
-print(f"Model training completed and saved successfully to '{model_save_path}'")
+def train(epochs=10, batch_size=32):
+    print("==================================================")
+    print("  Brain Tumor Detection AI — Model Training")
+    print("==================================================")
+    print(f"Dataset root: {DATASET_PATH}")
+    print(f"Target model save path: {MODEL_PATH}")
+
+    data, labels = load_and_preprocess_data()
+    print(f"Total dataset size: {len(data)} images.")
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        data,
+        labels,
+        test_size=0.2,
+        random_state=42,
+        shuffle=True
+    )
+    print(f"Training set: {len(X_train)} samples | Testing set: {len(X_test)} samples")
+
+    model = build_cnn_model()
+    model.summary()
+
+    print("\nStarting model training...")
+    history = model.fit(
+        X_train,
+        y_train,
+        epochs=epochs,
+        batch_size=batch_size,
+        validation_data=(X_test, y_test)
+    )
+
+    test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
+    print(f"\nFinal Test Loss: {test_loss:.4f} | Test Accuracy: {test_acc * 100:.2f}%")
+
+    os.makedirs(MODEL_DIR, exist_ok=True)
+    model.save(MODEL_PATH)
+    print(f"✅ Model successfully saved to: {MODEL_PATH}")
+    return history
+
+if __name__ == "__main__":
+    train()

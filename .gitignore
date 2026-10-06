@@ -1,7 +1,30 @@
+# Virtual environments
 venv/
+.venv/
+env/
+.env/
+
+# Python bytecode & cache
 __pycache__/
 *.pyc
-model/*.h5
-static/uploads/
-.env
+*.pyo
+*.pyd
+
+# Operating system files
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Upload directories (keep directory via .gitkeep)
+frontend/static/uploads/*
+!frontend/static/uploads/.gitkeep
+static/uploads/*
+!static/uploads/.gitkeep
+
+# Legacy root directories (use frontend/templates and frontend/static)
+/templates/
+/static/
+
+# Environment files
+.env
+
