@@ -1,6 +1,6 @@
-tensorflow
+tensorflow-cpu
 flask
 numpy
-opencv-python
+opencv-python-headless
 pillow
-scikit-learn
+gunicorn
