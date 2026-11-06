@@ -56,6 +56,7 @@ except Exception as err:
     print(f"⚠️ Notice: Model initialization deferred: {err}")
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/api/index", methods=["GET", "POST"])
 def index():
     prediction_data = None
     image_url = None
