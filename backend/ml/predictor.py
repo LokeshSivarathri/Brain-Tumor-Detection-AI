@@ -2,7 +2,6 @@ import os
 import time
 import cv2
 import numpy as np
-from tensorflow.keras.models import load_model
 
 # Dynamic path resolution relative to repository root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -59,6 +58,34 @@ _tflite_interpreter = None
 _tflite_input_idx = None
 _tflite_output_idx = None
 
+def _load_tflite_interpreter(model_path):
+    """
+    Dynamically loads a TFLite interpreter from ai-edge-litert, tflite-runtime,
+    or full tensorflow, enabling ultra-lightweight deployment on serverless platforms like Vercel.
+    """
+    # 1. Official Google LiteRT runtime (ai-edge-litert)
+    try:
+        from ai_edge_litert.interpreter import Interpreter
+        return Interpreter(model_path=model_path)
+    except Exception:
+        pass
+
+    # 2. Standalone tflite_runtime
+    try:
+        import tflite_runtime.interpreter as tflite
+        return tflite.Interpreter(model_path=model_path)
+    except Exception:
+        pass
+
+    # 3. Full TensorFlow lite interpreter
+    try:
+        import tensorflow as tf
+        return tf.lite.Interpreter(model_path=model_path)
+    except Exception as e:
+        raise ImportError(
+            f"No compatible TFLite engine found (checked ai_edge_litert, tflite_runtime, tensorflow): {e}"
+        )
+
 def get_model():
     """Lazily loads and caches the inference model (TFLite or Keras CNN) for high-efficiency evaluation."""
     global _model, _tflite_interpreter, _tflite_input_idx, _tflite_output_idx
@@ -66,9 +93,8 @@ def get_model():
     # Prefer TFLite: uses < 25 MB RAM and evaluates in ~30ms, ideal for cloud hosting
     if os.path.exists(TFLITE_PATH):
         if _tflite_interpreter is None:
-            import tensorflow as tf
             print(f"[NeuroScan AI] Loading lightweight TFLite model from: {TFLITE_PATH}")
-            _tflite_interpreter = tf.lite.Interpreter(model_path=TFLITE_PATH)
+            _tflite_interpreter = _load_tflite_interpreter(TFLITE_PATH)
             _tflite_interpreter.allocate_tensors()
             _tflite_input_idx = _tflite_interpreter.get_input_details()[0]["index"]
             _tflite_output_idx = _tflite_interpreter.get_output_details()[0]["index"]
@@ -83,6 +109,7 @@ def get_model():
                 "Please ensure the model file is present or run ml_pipeline/train_model.py."
             )
         print(f"[NeuroScan AI] Loading Keras CNN model from: {H5_PATH}")
+        from tensorflow.keras.models import load_model
         _model = load_model(H5_PATH)
         print("[NeuroScan AI] Keras CNN model loaded successfully.")
     return _model
@@ -91,12 +118,21 @@ def allowed_file(filename):
     """Validates uploaded image file extension against allowed formats."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def run_inference_detailed(image_path):
+def run_inference_detailed(image_path=None, file_bytes=None):
     """
-    Performs CNN inference on an MRI image slice and returns comprehensive diagnostic data.
+    Performs CNN inference on an MRI image slice (from file path or raw memory bytes)
+    and returns comprehensive diagnostic data.
     """
     start_time = time.perf_counter()
-    img = cv2.imread(image_path)
+
+    if file_bytes is not None:
+        nparr = np.frombuffer(file_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    elif image_path is not None:
+        img = cv2.imread(image_path)
+    else:
+        raise ValueError("Neither image_path nor file_bytes was provided for inference.")
+
     if img is None:
         raise ValueError("Unable to decode the provided image. Please upload a valid MRI scan in JPG or PNG format.")
 

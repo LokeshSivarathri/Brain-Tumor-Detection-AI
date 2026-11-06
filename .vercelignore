@@ -1,0 +1,15 @@
+.venv/
+venv/
+dataset/
+ml_pipeline/
+train_model.py
+run.bat
+model/brain_tumor_cnn.h5
+*.log
+.git/
+.gitignore
+.gitattributes
+Procfile
+__pycache__/
+*.pyc
+

@@ -28,3 +28,6 @@ static/uploads/*
 # Environment files
 .env
 
+# Vercel build & project cache
+.vercel/
+

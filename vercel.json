@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api/index"
+    }
+  ],
+  "functions": {
+    "api/index.py": {
+      "memory": 1024
+    }
+  },
+  "env": {
+    "VERCEL_SUPPORT_LARGE_FUNCTIONS": "1"
+  }
+}
+

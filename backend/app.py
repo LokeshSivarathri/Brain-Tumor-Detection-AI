@@ -2,6 +2,8 @@ import os
 import sys
 import time
 import uuid
+import base64
+import tempfile
 from flask import Flask, render_template, request, jsonify, url_for
 from werkzeug.utils import secure_filename
 
@@ -31,11 +33,21 @@ app = Flask(
     static_folder=STATIC_DIR
 )
 
-app.config["UPLOAD_FOLDER"] = UPLOAD_DIR
+# Ensure upload directory handles both persistent local runs and serverless (Vercel) read-only environments
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    EFFECTIVE_UPLOAD_DIR = UPLOAD_DIR
+except OSError:
+    EFFECTIVE_UPLOAD_DIR = os.path.join(tempfile.gettempdir(), "neuroscan_uploads")
+    os.makedirs(EFFECTIVE_UPLOAD_DIR, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = EFFECTIVE_UPLOAD_DIR
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # 16 MB max upload
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(SAMPLES_DIR, exist_ok=True)
+try:
+    os.makedirs(SAMPLES_DIR, exist_ok=True)
+except Exception:
+    pass
 
 # Warm up CNN model on server startup
 try:
@@ -55,20 +67,20 @@ def index():
 
         try:
             if file and file.filename and allowed_file(file.filename):
-                safe_name = secure_filename(file.filename)
-                unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
-                file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
-                file.save(file_path)
+                file_bytes = file.read()
+                prediction_data = run_inference_detailed(file_bytes=file_bytes)
 
-                prediction_data = run_inference_detailed(file_path)
-                image_url = url_for("static", filename=f"uploads/{unique_name}")
+                # Use Base64 Data URL for universal compatibility across serverless & local hosting
+                b64_content = base64.b64encode(file_bytes).decode("utf-8")
+                mime_type = file.mimetype or "image/jpeg"
+                image_url = f"data:{mime_type};base64,{b64_content}"
 
             elif sample_id:
                 # Handle sample image selection
                 matched_sample = next((s for s in SAMPLE_SCANS if s["id"] == sample_id), None)
                 if matched_sample:
                     sample_path = os.path.join(SAMPLES_DIR, matched_sample["filename"])
-                    prediction_data = run_inference_detailed(sample_path)
+                    prediction_data = run_inference_detailed(image_path=sample_path)
                     image_url = matched_sample["image_url"]
                 else:
                     error_message = "Selected sample scan could not be found."
@@ -89,6 +101,7 @@ def index():
 def api_predict():
     """
     Asynchronous JSON API endpoint for interactive scans without full-page reloads.
+    Compatible with serverless runtimes (in-memory parsing + Base64 output).
     """
     try:
         sample_id = request.form.get("sample_id")
@@ -102,12 +115,15 @@ def api_predict():
                 }), 400
 
             safe_name = secure_filename(file.filename)
-            unique_name = f"{uuid.uuid4().hex[:8]}_{safe_name}"
-            file_path = os.path.join(app.config["UPLOAD_FOLDER"], unique_name)
-            file.save(file_path)
+            file_bytes = file.read()
 
-            data = run_inference_detailed(file_path)
-            data["image_url"] = url_for("static", filename=f"uploads/{unique_name}")
+            # Run inference directly from memory without needing filesystem writes
+            data = run_inference_detailed(file_bytes=file_bytes)
+
+            # Generate Data URL for instantaneous client rendering
+            b64_content = base64.b64encode(file_bytes).decode("utf-8")
+            mime_type = file.mimetype or "image/jpeg"
+            data["image_url"] = f"data:{mime_type};base64,{b64_content}"
             data["filename"] = safe_name
             return jsonify({"success": True, "data": data})
 
@@ -117,7 +133,7 @@ def api_predict():
                 return jsonify({"success": False, "error": "Sample scan not found."}), 404
 
             sample_path = os.path.join(SAMPLES_DIR, matched_sample["filename"])
-            data = run_inference_detailed(sample_path)
+            data = run_inference_detailed(image_path=sample_path)
             data["image_url"] = matched_sample["image_url"]
             data["filename"] = matched_sample["title"]
             return jsonify({"success": True, "data": data})

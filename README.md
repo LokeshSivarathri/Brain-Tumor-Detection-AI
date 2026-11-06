@@ -112,6 +112,25 @@ http://127.0.0.1:8080/
 
 ---
 
+## ☁️ Deploying to Vercel
+
+NeuroScan AI is fully configured for serverless deployment on Vercel:
+
+1. **Push to GitHub**:
+   ```bash
+   git add .
+   git commit -m "Configure project for Vercel deployment"
+   git push origin main
+   ```
+2. **Import into Vercel**:
+   - Go to [vercel.com/new](https://vercel.com/new).
+   - Select your `Brain-Tumor-Detection-AI` GitHub repository.
+   - Leave the Framework Preset as **Other**.
+   - (Optional) In **Environment Variables**, ensure `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` is set if using large serverless functions.
+   - Click **Deploy**.
+
+---
+
 ## 🔬 Model Training
 
 To retrain the CNN model using the dataset in `dataset/`:
